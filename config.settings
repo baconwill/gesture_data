@@ -1,8 +1,12 @@
 [data_collection]
 parent_directory = my_data
 gesture = A
-number_of_vids = 50
-video_source = 0
-setup_check = True
+number_of_vids = 100
+video_source = 2
+setup_check = False
+[file_move]
+start_directory = my_data
+end_directory = all_data
+move_check = True
 
 

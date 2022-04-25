@@ -36,6 +36,84 @@ def get_label(index, hand, results):
 	return label
 
 
+def extract_no_order2d(result):
+	if result.multi_hand_landmarks:
+		if len(result.multi_hand_landmarks) == 1:
+			hand = result.multi_hand_landmarks[0]
+			# hand_label = get_label(1, hand, result)
+			# if hand_label == 'Left':
+			first_hand = np.array([[res.x, res.y] for res in hand.landmark]).flatten() 
+			second_hand = np.zeros(21*2)
+			# else:
+			# 	right_hand = np.array([[res.x, res.y, res.z] for res in hand.landmark]).flatten() 
+			# 	left_hand = np.zeros(21*3)
+		else:
+			hand1 = result.multi_hand_landmarks[0]
+			hand2 = result.multi_hand_landmarks[1]
+			# hand_label = get_label(1, hand1, result)
+			# if hand_label == 'Left':
+			first_hand = np.array([[res.x, res.y] for res in hand1.landmark]).flatten() 
+			second_hand = np.array([[res.x, res.y] for res in hand2.landmark]).flatten() 
+	else:
+		first_hand = np.zeros(21*2)
+		second_hand = np.zeros(21*2)
+	landmark = np.concatenate([first_hand,second_hand])
+	return landmark
+
+
+
+def extract_no_order(result):
+	if result.multi_hand_landmarks:
+		if len(result.multi_hand_landmarks) == 1:
+			hand = result.multi_hand_landmarks[0]
+			# hand_label = get_label(1, hand, result)
+			# if hand_label == 'Left':
+			first_hand = np.array([[res.x, res.y, res.z] for res in hand.landmark]).flatten() 
+			second_hand = np.zeros(21*3)
+			# else:
+			# 	right_hand = np.array([[res.x, res.y, res.z] for res in hand.landmark]).flatten() 
+			# 	left_hand = np.zeros(21*3)
+		else:
+			hand1 = result.multi_hand_landmarks[0]
+			hand2 = result.multi_hand_landmarks[1]
+			# hand_label = get_label(1, hand1, result)
+			# if hand_label == 'Left':
+			first_hand = np.array([[res.x, res.y, res.z] for res in hand1.landmark]).flatten() 
+			second_hand = np.array([[res.x, res.y, res.z] for res in hand2.landmark]).flatten() 
+	else:
+		first_hand = np.zeros(21*3)
+		second_hand = np.zeros(21*3)
+	landmark = np.concatenate([first_hand,second_hand])
+	return landmark
+
+
+def extract_no_order(result):
+	if result.multi_hand_landmarks:
+		if len(result.multi_hand_landmarks) == 1:
+			hand = result.multi_hand_landmarks[0]
+			# hand_label = get_label(1, hand, result)
+			# if hand_label == 'Left':
+			first_hand = np.array([[res.x, res.y, res.z] for res in hand.landmark]).flatten() 
+			second_hand = np.zeros(21*3)
+			# else:
+			# 	right_hand = np.array([[res.x, res.y, res.z] for res in hand.landmark]).flatten() 
+			# 	left_hand = np.zeros(21*3)
+		else:
+			hand1 = result.multi_hand_landmarks[0]
+			hand2 = result.multi_hand_landmarks[1]
+			# hand_label = get_label(1, hand1, result)
+			# if hand_label == 'Left':
+			first_hand = np.array([[res.x, res.y, res.z] for res in hand1.landmark]).flatten() 
+			second_hand = np.array([[res.x, res.y, res.z] for res in hand2.landmark]).flatten() 
+	else:
+		first_hand = np.zeros(21*3)
+		second_hand = np.zeros(21*3)
+	landmark = np.concatenate([first_hand,second_hand])
+	return landmark
+
+
+
+
 # turns the result from the landmark detector into a numpy array of:
 # -------  (2 hands)x(21 landmarks)x(cartesian triplet)  ----------
 # with a final shape of:
@@ -43,6 +121,8 @@ def get_label(index, hand, results):
 
 # NOTE: hand order will always be LEFT then RIGHT in the array
 #                                 ----      -----
+# After trying this... don't do it, it's dumb won't work well with ios 
+# mediapipe, use the other one
 
 def extract_keypoints(result):
 	if result.multi_hand_landmarks:
@@ -110,15 +190,21 @@ def removeFolder(folder_dir):
 def captureVideo(video_dir, gesture, video_count,frame_count,video_source,setup_check):
 	print("capturing video...")
 	cap = cv2.VideoCapture(video_source)
+	# cap = cv2.VideoCapture(0)
+	# cap.set(cv2.CAP_PROP_EXPOSURE, -50) 
 	frame_num = 0
+	# cv2.waitKey(20)
 	while cap.isOpened():
 		ret,frame = cap.read()
 		if ret and (frame_num < frame_count):
 			image, results = mediapipe_detection(frame, hands)
 			draw_hand_landmarks(image,results)
 			cv2.imshow('OpenCV Feed', image)
+			
+			# print(keypoints)
 			if not setup_check:
-				keypoints = extract_keypoints(results)
+				keypoints = extract_no_order2d(results)
+				print(np.shape(keypoints))
 				frame_path = os.path.join(video_dir,"{}{}_f{}".format(gesture, video_count, frame_num))
 				np.save(frame_path, keypoints)
 			frame_num += 1
@@ -129,7 +215,7 @@ def captureVideo(video_dir, gesture, video_count,frame_count,video_source,setup_
 			print("frame hit")
 			break
 	cap.release()
-	cv2.destroyAllWindows()
+	
 
 
 
@@ -143,6 +229,7 @@ def captureData(gesture_dir, gesture, video_count,video_source,setup_check):
 
 
 
+
 def runCaptureLoop(parent_dir, gesture, number_of_vids,video_source,setup_check):
 	gesture_dir = os.path.join(parent_dir, gesture)
 	if not os.path.exists(gesture_dir):
@@ -150,6 +237,7 @@ def runCaptureLoop(parent_dir, gesture, number_of_vids,video_source,setup_check)
 	start_val = get_starting_val(gesture_dir)
 	for i in range(start_val, start_val +number_of_vids):
 		captureData(gesture_dir, gesture, i, video_source,setup_check)
+	cv2.destroyAllWindows()
 
 
 def getDataConfig():
